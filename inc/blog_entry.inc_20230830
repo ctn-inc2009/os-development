@@ -1,0 +1,104 @@
+<?php
+$filename = __DIR__."/blog_data.inc";
+include $filename;
+
+$tmp = $_SERVER['REQUEST_TIME'] - (60*60); //1時間に一回
+if ($lastCheck > $tmp) {
+  return;
+}
+$blogData = '';
+
+//フィード登録
+$data['feedurl']['blog'] = 'https://os-inc.jp/blog/feed/';
+$data['feedurl']['infomation'] = 'https://os-inc.jp/blog/category/infomation/feed/';
+$data['feedurl']['usersalbum'] = 'https://os-inc.jp/blog/category/usersalbum/feed/';
+//$data['feedurl'][] = ''; 必要な分だけ追加してください
+
+$rssList = $data['feedurl'];
+
+//同時呼び出し
+$rssdataRaw = multiRequest($rssList);
+foreach ($rssdataRaw as $k => $v) {
+  //URL設定
+  $rssdata = simplexml_load_string($v, 'SimpleXMLElement', LIBXML_NOCDATA);
+  if ($rssdata === false) continue;
+  $i = 0;
+  foreach($rssdata->channel->item as $item) {
+    $blogData .= '$_blog["'.$k.'"]['.$i.']["link"] = "'.$item->link.'";'."\n";
+    $blogData .= '$_blog["'.$k.'"]['.$i.']["date"] = "'.strtotime($item->pubDate).'";'."\n";
+    $blogData .= '$_blog["'.$k.'"]['.$i.']["title"] = "'.$item->title.'";'."\n";
+    $blogData .= '$_blog["'.$k.'"]['.$i.']["body"] = "'.$item->description.'";'."\n";
+    if (strpos($item->children('content', true)->encoded, '<p class="thumbnail">') !== FALSE) {
+              preg_match('/<img.*src\s*=\s*[\"|\'](.*?)[\"|\'].*>/i', $item->children('content', true)->encoded, $image);
+      $blogData .= '$_blog["'.$k.'"]['.$i.']["image"] = "'.$image[1].'";'."\n";
+    }
+    $i++;
+  }
+}//for
+
+
+//dataファイルを更新
+$blogData = "<?php
+\$lastCheck = \"".$_SERVER['REQUEST_TIME']."\";
+".$blogData."
+?>";
+
+$fp = @fopen($filename,"w");
+flock($fp,LOCK_EX);
+fwrite($fp,$blogData);
+flock($fp,LOCK_UN);
+fclose($fp);
+
+/**/
+
+//ここから同時呼び出し関数
+function multiRequest($data, $options = array()) {
+
+  // 配列を用意します。
+  $curly = array();
+  // data to be returned
+  $result = array();
+
+  //並列ファンクション
+  $mh = curl_multi_init();
+
+  // loop through $data and create curl handles
+  // then add them to the multi-handle
+  foreach ($data as $id => $d) {
+    $curly[$id] = curl_init();
+    $url = (is_array($d) && !empty($d['url'])) ? $d['url'] : $d;
+    curl_setopt($curly[$id], CURLOPT_URL,            $url);
+    curl_setopt($curly[$id], CURLOPT_HEADER,         0);
+    curl_setopt($curly[$id], CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($curly[$id], CURLOPT_TIMEOUT,        300);
+    curl_setopt($curly[$id], CURLOPT_CONNECTTIMEOUT, 30);
+
+    // 投稿記事があるかどうか
+    if (is_array($d)) {
+      if (!empty($d['post'])) {
+        curl_setopt($curly[$id], CURLOPT_POST, 1);
+        curl_setopt($curly[$id], CURLOPT_POSTFIELDS, $d['post']);
+      }
+    }
+
+    if (!empty($options)) { curl_setopt_array($curly[$id], $options);}
+    curl_multi_add_handle($mh, $curly[$id]);
+  }
+
+  $running = null;
+// ハンドルを実行
+  do {
+    curl_multi_exec($mh, $running);
+  } while($running > 0);
+
+  foreach($curly as $id => $c) {
+    $result[$id] = curl_multi_getcontent($c);
+    curl_multi_remove_handle($mh, $c);
+  }
+
+  // ハンドルを閉じる
+  curl_multi_close($mh);
+
+  return $result;
+}
+?>

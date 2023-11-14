@@ -1,0 +1,310 @@
+<?php
+// ライブラリ読込み
+require "../inc/option.inc";
+require incPATH."/library.inc";
+require incPATH."/define.inc";
+
+$ua = 'pc';
+$tmp = $_SERVER['HTTP_USER_AGENT'];
+if (empty($_SESSION['sp'])) {
+  if((strpos($tmp,'iPhone')!==false)||(strpos($tmp,'iPod')!==false)||(strpos($tmp,'Android')!==false) && (strpos($tmp,'Mobile')!==false)) {
+    $ua = 'sp';
+  }
+}
+
+$sno = !empty($_FORM['sno']) ? $_FORM['sno'] : 0;
+
+$url = "https://auto.jocar.jp/HPWebservice/GetCarDetail.aspx?KEY_ID={$key_id}&HNCD={$hncd}&GM={$sno}";
+$xml = simplexml_load_file($url);
+$sql = '';
+foreach($xml->stock_info as $data) {
+    $maker = $data->maker;
+    $cname = $data->car_name;
+    //,変換
+    $price = str_replace(",", "", $data->price);
+    //$price_total = str_replace(",", "", $data->price_total);
+    if ($price < 0) {
+      $price = '<span class="red">SOLD OUT</span>';
+    } else {
+      $count = strlen($price);
+      if($count <= 8) {
+        $price_min = $price / 10000;
+      }
+      $price = '車両価格<span class="red">'.$price_min.'<em>万円(税込)</em></span>';
+    }
+    $nensiki = $data->year;
+    $kensa = $data->inspection;
+    $grade = $data->grade;
+
+    //系統色（白）など 使わない
+    //$color = !empty($data->color) ? $data->color : '';
+    //色（ホワイトパールクリスタルシャイン）など
+    $color = !empty($data->exterior_color) ? $data->exterior_color : '';
+    //在庫状況 使わない
+    $status = !empty($data->status) ? $data->status : '-';
+    //商談件数 使わない
+    $business_count = $data->business_count > 0 ? $data->business_count : '-';
+    //型式
+    $model_number = $data->model_number;
+    //車台ナンバー
+    $frame_number = $data->frame_number;
+    //内装色
+    $interior_color = $data->interior_color;
+    //走行距離
+    $distance = !empty($data->distance) ? $data->distance : '-';
+    //ミッション名
+    $mission = $data->mission;
+    //駆動
+    $drive = $data->drive;
+    //低燃費排出ガス
+    $gas = $data->gas;
+    //タイプ
+    $type = $data->type;
+    //形状
+    $config = $data->config;
+    //排気量
+    $displacement = !empty($data->displacement) ? $data->displacement : '-';
+    //エンジン区分
+    $engine_type = $data->engine_type;
+    //乗車定員
+    $capacity = $data->capacity;
+    //ドア数
+    $door = $data->door;
+    //車検日
+    $inspection = $data->inspection;
+    //修復歴
+    $repair = $data->repair;
+    //リサイクル状況
+    $recycle = $data->recycle;
+    //保証_1
+    $warranty1 = $data->warranty1;
+    //保証_2
+    $warranty2 = $data->warranty2;
+    //定期点検整備
+    $maintenance = $data->maintenance;
+    //整備費用
+    $maintenance_cost = $data->maintenance_cost;
+    //整備手帳
+    $maintenance_note = $data->maintenance_note;
+    //車歴
+    $history = $data->history;
+
+    //お問い合わせ
+    $link = '管理番号'.$sno.'　'.$cname.'　'.$grade.'　'.$color;
+
+    //スライド用クーポン
+    // for($i = 1; $i <= 10; $i++){
+    //   $filename = "../files/image/1_{$i}.jpg";
+    //   if (file_exists($filename)) {
+    //     $img = '<img src="'.$filename.'" alt="'.$cname.$j.'枚目">';
+    //     $txt = !empty($_coupon[$i]) ? '<p>'.nl2br($_coupon[$i]).'</p>' : '';
+    //     $slide .= "<li>{$img}{$txt}</li>";
+    //     $pager .= "<a data-slide-index=\"{$j}\" href=\"#\">{$img}</a>";
+    //     if ($i == 1) { $pager .= "<a data-slide-index=\"{$j}\" href=\"#\" class=\"coupon\">クーポンを見る</a>"; }
+    //     $j++;
+    //   }
+    // }
+
+  //画像
+  $slide = $pager = ''; $j = 0;
+  foreach ($data->img as $k => $v) {
+    $j++;
+    foreach($v as $k2 => $v2) {
+      if ($k2 == 'img_comment') {
+        $comment = !empty($v2) ? '<p>'.$v2.'</p>' : '';
+      }
+      if ($k2 == 'img_url') {
+        //https警告回避 httpから画像取る場合はhttp:を消す
+        $img_url = strpos($v2,'http:') !== false ? str_replace('http:','',$v2) : $v2;
+        $img = '<img src="'.$img_url.'" alt="'.$cname.'">';
+      }
+    }
+    $slide .= '<li><div class="img">'.$img.'</div>'.$comment.'</li>';
+    $pager .= '<li>'.$img.'</li>';
+  }
+  $cnt = $j;
+
+  //装備情報
+  $equip = '';
+  foreach ($data->equip as $k => $v) {
+    foreach($v as $k2 => $v2) {
+      if ($k2 == 'equipment') {
+        $tmp = mb_convert_kana($v2,'ASKV');
+        $equip .= '<li>'.$tmp.'</li>';
+      }
+    }
+  }
+  //その他装備
+  $equipment_etc = $data->equipment_etc;
+
+  //PRコメント
+  $pr_comment = '';
+  foreach ($data->pr as $k => $v) {
+    foreach($v as $k2 => $v2) {
+      if ($k2 == 'pr_comment') {
+        $pr_comment .= nl2br($v2);
+      }
+    }
+  }
+
+}
+//画像
+$slider = '';
+if (!empty($slide)) {
+  if ($ua != 'pc'){
+    $slider .= '<div class="slide_cap">スライドで画像を確認できます。<span>全'.$cnt.'枚</span></div>';
+    $slider_txt = '<p class="slide_notes">画像をクリックすると大きく表示できます。</p>';
+  }
+  $slider .= <<< EOD
+  <div id="slider">
+    <div id="sliderInner">
+      <ul>{$slide}</ul>
+      <div id="arrow"></div>
+    </div><!--/#sliderInner -->
+    {$slider_txt}
+    <div id="bx-pager">
+      <ul>{$pager}</ul>
+    </div>
+  </div><!--/#slider -->\n
+EOD;
+}
+//装備情報
+if (!empty($equip)) {
+  $equipData = <<< EOD
+  <h4 class="conttl4">装備情報</h4>
+  <ul class="vehicle equip flex">
+    {$equip}
+  </ul>\n
+EOD;
+}
+//PRコメント
+if (!empty($pr_comment)) {
+  $pr_comment = <<< EOD
+    <h4 class="conttl4">PRコメント</h4>
+    <div>
+      <p>{$pr_comment}</p>
+    </div>\n
+EOD;
+}
+
+/*
+■在庫店表記がある場合（rBox中）
+<p class="store store{$s}">在庫店：{$_store[$s]}</p>
+■タグリスト（rBox中在庫店下）
+<ul class="tagList clearfix">
+  {$new}
+  <li class="c{$cls}">{$row['usage']}</li>
+</ul>
+■いるのか分からないもの（走行距離などのテーブルの下）
+<table class="data clear">
+  <tr>
+    <th>在庫状況</th>
+    <th>商談件数</th>
+  </tr>
+  <tr>
+    <td>{$status}</td>
+    <td>{$business_count}</td>
+  </tr>
+</table>
+■form在庫店取得（お問い合わせフォーム内）
+<input type="hidden" name="store" value="{$s}">
+*/
+
+//お問い合わせ
+$contactBtn = $ua == 'pc' ? '<p class="contactBtn"><a href="#toiawase" class="arrow">在庫お問い合わせ</a></p>' : '';
+
+$telBox = <<< EOD
+<p class="tel-zaiko source">
+<a href="tel:072-959-6025"><span class="tel gFont1">072-959-6025</span></a>
+</p>\n
+EOD;
+
+$carContact = <<< EOD
+<div class="carContact">
+  <p class="telTtl">電話でお問い合わせ</p>
+  {$telBox}
+  {$contactBtn}
+</div><!--/carContact-->\n
+EOD;
+
+$vehicle = <<< EOD
+<table class="tbl vehicle" summary="車両の状態">
+  <tr><th>管理番号</th><td>{$sno}</td></tr>
+  <tr><th>タイプ</th><td>{$type}</td></tr>
+  <tr><th>形状</th><td>{$config}</td></tr>
+  <tr><th>駆動</th><td>{$drive}</td></tr>
+</table>
+<table class="tbl vehicle" summary="車両の状態">
+  <tr><th>ミッション名</th><td>{$mission}</td></tr>
+  <tr><th>ドア数</th><td>{$door}</td></tr>
+  <tr><th>リサイクル状況</th><td>{$recycle}</td><tr>
+  <tr class="tb_none sp_none"><th>&nbsp;</th><td>&nbsp;</td><tr>
+</table>
+EOD;
+
+$zaikoCon = $ua == 'pc' ? $telBox : '';
+
+$details = <<< EOD
+<div class="detailsCon flex flex-between">
+  <h3 class="conttl2">{$cname} <span>{$grade}</span></h3>
+  <div class="lBox">
+    {$slider}
+  </div><!--/lBox-->
+  <div class="rBox">
+    <p class="price">{$price}</p>
+    <table class="tbl data clear">
+      <tr>
+        <th>年式</th>
+        <td>{$nensiki}</td>
+      </tr>
+      <tr>
+        <th>車検</th>
+        <td>{$kensa}</td>
+      </tr>
+      <tr>
+        <th>走行距離</th>
+        <td>{$distance}</td>
+      </tr>
+      <tr>
+        <th>排気量</th>
+        <td>{$displacement}</td>
+      </tr>
+      <tr>
+        <th>色</th>
+        <td>{$color}</td>
+      </tr>
+    </table>
+    {$carContact}
+  </div><!--/rBox-->
+</div><!--/detailsCon-->
+
+<div class="tblBox">
+  <h4 class="conttl4">車両情報</h4>
+  <div class="carInfoTbl flex j-between">
+    {$vehicle}
+  </div>
+  {$equipData}
+  {$pr_comment}
+</div><!--/tblBox-->
+<div id="toiawase" class="carContact box2 flex flex_center">
+  <p class="zaikoCon center">在庫お問い合わせ</p>
+  {$zaikoCon}
+  <form action="form.php" method="post">
+  <input type="hidden" name="cname" value="{$link}">
+  <div class="contactForm">
+  <dl>
+  <dt>お名前</dt><dd><input type="text" name="name" value="{$_SESSION['name']}" placeholder="例）田中　太郎"></dd>
+  <dt>電話番号</dt><dd><input type="text" name="tel" value="{$_SESSION['tel']}" placeholder="例）09012345678"></dd>
+  <dt>メールアドレス</dt><dd><input type="text" name="email" value="{$_SESSION['email']}" placeholder="例）example@example.com"></dd>
+  </dl>
+  <p class="submit"><input type="submit" name="confirm" class="btn_submit" value="確認画面へ" /></p>
+  </div>
+  <input type="hidden" name="zaikoFlag" value="1">
+  </form>
+</div><!--/toiawase-->\n
+EOD;
+
+$data = json_encode($details);
+echo <<< EOT
+{$data}
+EOT;

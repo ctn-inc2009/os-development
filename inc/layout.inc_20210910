@@ -1,0 +1,227 @@
+<?php
+$ua = 'pc';
+$tmp = $_SERVER['HTTP_USER_AGENT'];
+if (empty($_SESSION['sp'])) {
+  if((strpos($tmp,'iPhone')!==false)||(strpos($tmp,'iPod')!==false)||(strpos($tmp,'Android')!==false) && (strpos($tmp,'Mobile')!==false)) {
+    $ua = 'sp';
+  }
+}
+
+$siteTitle = '西日本最大級のレクサス専門店株式会社OS';
+if(!empty($pageTitle)) {
+  $pageTitle = $pageTitle;
+} elseif(!empty($conTitle) && empty($pageTitle)) {
+  //conTitleはあるけどpageTitleは空の時
+  $pageTitle = $conTitle.' | '.$siteTitle;
+} else {
+  $pageTitle = $siteTitle;
+}
+
+$metaDescription = !empty($metaDescription) ? $metaDescription : '';
+
+$subject = $author = '株式会社OS';
+
+
+// metaタグ
+$meta = <<< EOD
+<title>{$pageTitle}</title>
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-W5X3BQH');</script>
+<!-- End Google Tag Manager -->
+<meta charset="UTF-8">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+<meta name="description" content="{$metaDescription}" />
+<meta name="keywords" content="レクサス,大阪,西日本,LEXUS,中古車,新車,修理,整備,メンテナンス">
+<meta name="author" content="{$subject}" />
+<meta name="copyright" content="{$subject}" />
+<meta name="format-detection" content="telephone=no">
+<meta name="viewport" content="width=device-width,user-scalable=no,maximum-scale=1">
+<link href="https://fonts.googleapis.com/css?family=Lato" rel="stylesheet">
+<link rel="icon" href="/favicon.ico" />
+<link rel="apple-touch-icon" href="/img/logo240.png" />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@200;400;500;700&display=swap" rel="stylesheet">\n
+EOD;
+
+//css　共通
+$css = '';
+$level = mb_substr_count($_SERVER['PHP_SELF'], "/");
+$_cssList = array('/css/common.css', '/css/base.css?20210512');
+if ( $level > 1) {
+  array_push($_cssList, '/css/contents.css');
+} else {
+  array_push($_cssList, '/css/top.css');
+}
+if (!empty($_cssList2)) { $_cssList = array_merge($_cssList,$_cssList2); }
+if ($ua == 'sp' && !empty($_cssListSp)) { $_cssList = array_merge($_cssList,$_cssListSp); }
+foreach ($_cssList as $v) {
+  $time = @filemtime(__DIR__."/..".$v);
+  $css .= '<link href="'.$v.'?'.$time.'" rel="stylesheet">'."\n";
+}
+
+
+//js
+$js = <<< EOD
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script src="/js/script.js"></script>\n
+EOD;
+
+
+$gtm = <<< EOD
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-W5X3BQH"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+EOD;
+
+
+//メールアドレス　info@
+$mail_info = <<< EOD
+<script type="text/javascript">
+<!--
+function converter(M){
+var str="", str_as="";
+for(var i=0;i<M.length;i++){
+str_as = M.charCodeAt(i);
+str += String.fromCharCode(str_as + 1);
+}
+return str;
+}
+var ad = converter(String.fromCharCode(104,109,101,110,63,103,117,44,118,110)+String.fromCharCode(113,107,99,110,101,114,115,96,113,45,98,110,108));
+document.write("<a href=\"mai"+"lto:"+ad+"\">"+ad+"<\/a>");
+//-->
+</script>\n
+EOD;
+
+
+// ヘッダー
+$header = <<< EOD
+<header>
+  <div class="topBox flex j-between">
+    <div class="logoBox">
+      <h1 class="logo"><a href="/"><img src="/img/h_logo.png" alt="株式会社OS"></a></h1>
+      <div class="ttl_box">西日本最大級　レクサス専門店 OS</div>
+    </div><!-- .logoBox -->   
+<nav id="gnav">
+    <ul class="nav">
+      <li><a href="/">HOME</a></li>
+      <li><a href="/stock/">クルマを探す</a></li>
+      <li><a href="/reason/">レクサス専門店が選ばれる理由</a></li>
+      <li><a href="/maintenance/">アフターメンテナンス</a></li>
+      <li><a href="/support/">ご購入サポート</a></li>
+      <li><a href="/purchase/">買取</a></li>
+      <li><a href="/company/">会社紹介</a></li>
+      <li><a href="tel:072-959-6025"><img src="/img/h_tel.svg" alt="電話でお問い合わせ" class="sp_none"><span class="pc_none">tel:072-959-6025</span></a></li>
+    </ul>
+  </nav>
+  </div><!--.topBox-->
+
+  <div id="sp-btn" class="menu-button">
+    <p class="label gFont1">MENU</p>
+    <div class="menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div><!-- .menu -->
+  </div><!-- .menu-button -->
+</header><!-- header -->\n
+EOD;
+
+
+// フッター
+$footer = <<< EOD
+
+<div class="flo_nav flex center">
+  <p class="fbtn_tel fade"><a href="tel:0729596025">お電話</a></p>
+  <p class="fbtn_stock fade"><a href="/stock/">在庫車検索</a></p>
+  <p class="fbtn_contact fade"><a href="/contact/">お問い合わせ</a></p>
+  <p class="fbtn_reserve fade"><a href="/reserve/">来店予約</a></p>
+  <p class="pagetop fade"><a href="#wrapper">PAGETOP</a></p>
+</div>
+
+<footer>
+<div class="pc_none">
+<div class="flex j-center">
+  <ul>
+    <li><a href="/">HOME</a></li>
+    <li><a href="/stock/">クルマを探す</a></li>
+    <li><a href="/reason/">レクサス専門店が選ばれる理由</a></li>
+    <li><a href="/maintenance/">アフターメンテナンス</a></li>
+    <li><a href="/support/">ご購入サポート</a></li>
+  </ul>
+  <ul>
+    <li><a href="/purchase/">買取</a></li>
+    <li><a href="/company/">会社紹介</a></li>
+    <li><a href="/sitemap/">サイトマップ</a></li>
+    <li><a href="/policy/">プライバシーポリシー</a></li>
+    <li><a href="/policy/antisocial.php">反社会的勢力に対する基本方針</a></li>
+    <li><a href="/contact/">お問い合わせ</a></li>
+  </ul>
+</div>
+<div class="f_add">
+      <p class="logo">株式会社OS・レクサス専門店</p>
+      <p class="address">〒583-0011 大阪府藤井寺市沢田2丁目1ー31<br>TEL：072-959-6025<br>営業時間：10:00～19:00 / 定休日：水曜日・木曜日</span></p>
+</div><!--.f_add-->
+</div><!-- .pc_none -->
+
+
+  <div class="f_inner flex j-between sp_none">
+    <div class="f_add">
+      <p class="logo">株式会社OS・レクサス専門店</p>
+      <p class="address">〒583-0011 大阪府藤井寺市沢田2丁目1ー31<br>TEL：072-959-6025<br>営業時間：10:00～19:00 / 定休日：水曜日・木曜日</span></p>
+    </div><!--.f_add-->
+
+<ul class="fnav">
+<li><a href="/stock/">クルマを探す</a></li>
+<li><a href="/reason/">レクサス専門店が選ばれる理由</a>
+<ul>
+  <li><a href="/reason/#reason01">西日本最大級の在庫量</a></li>
+  <li><a href="/reason/#reason02">高品質レクサスが驚きの販売価格</a></li>
+  <li><a href="/reason/#reason03">レクサス専門店としての使命</a></li>
+  <li><a href="/reason/#reason04">保証もトラブルも安心</a></li>
+  <li><a href="/reason/#reason05">メーター保証</a></li>
+  <li><a href="/reason/#reason06">第三者機関の査定・鑑定</a></li>
+</ul></li>
+</ul>
+
+<ul class="fnav">
+<li><a href="/maintenance/">アフターメンテナンス</a>
+<ul>
+  <li><a href="/maintenance/#maintenance01">車検案内</a></li>
+  <li><a href="/maintenance/#maintenance02">修理メンテナンス</a></li>
+  <li><a href="/maintenance/#maintenance03">納車前整備</a></li>
+	<li><a href="/maintenance/#maintenance04">鈑金修理</a></li>
+</ul></li>
+<li><a href="/support/">ご購入サポート</a>
+<ul>
+  <li><a href="/support/#support01">安心保証</a></li>
+	<li><a href="/support/#support01_2">おすすめオプション</a></li>
+  <li><a href="/support/#support02">メンテナンスパック</a></li>
+  <li><a href="/support/#support03">ボディコーティング</a></li>
+	<li><a href="/support/#support04">注文販売</a></li>
+</ul></li>
+</ul><!--.nav2-->
+
+<ul class="fnav">
+<li><a href="/purchase/">買取</a></li>
+<li><a href="/company/">会社紹介</a>
+<ul>
+<li><a href="/company/#company01">店舗情報</a></li>
+<li><a href="/company/#company02">アクセス</a></li>
+<!--<li><a href="/company/#company03">スタッフ紹介</a></li>-->
+</ul></li>
+<li><a href="/sitemap/">サイトマップ</a></li>
+<li><a href="/policy/">プライバシーポリシー</a></li>
+<li><a href="/policy/antisocial.php">反社会的勢力に対する基本方針</a></li>
+<li><a href="/contact/">お問い合わせ</a></li>
+</ul>
+
+</div><!--.inner-->
+<p class="copy">&copy;2020 OS inc.<span class="sp_none"> Designed by <a href="https://www.tratto-brain.jp/" target="_blank">TrattoBrain.</a></span></p>
+</footer><!-- footer -->\n
+EOD;
+
+?>

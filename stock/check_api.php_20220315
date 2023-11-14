@@ -1,0 +1,129 @@
+<?php
+//ライブラリ読み込み
+require "/var/www/vhosts/os-inc.jp/httpdocs/inc/option.inc";
+require "/var/www/vhosts/os-inc.jp/httpdocs/inc/library.inc";
+require "/var/www/vhosts/os-inc.jp/httpdocs/inc/entry.inc";
+
+// データベースの接続
+$dbh = db_construct();
+
+// $maker = array_flip($_maker); //メーカー値とキーを入れ替える
+$tbName = "car";
+$sql = "INSERT INTO `{$tbName}` VALUES ";
+
+$url = "https://auto.jocar.jp/HPWebservice/GetCarList.aspx?KEY_ID={$key_id}&HNCD={$hncd}&HIT_PER_PAGE=500";
+$xml = simplexml_load_file($url);
+//if ($xml === false) continue;
+$array = array();
+$i = 0;
+foreach($xml->stock_info as $data) {
+  //画像格納
+  $img_url = $img_comment = '';
+  foreach ($data->img as $k => $v) {
+    foreach($v as $k2 => $v2) {
+      if ($k2 == 'img_url') {
+        $img_url .= $v2.';';
+      }
+      if ($k2 == 'img_comment') {
+        $img_comment .= htmlspecialchars($v2, ENT_QUOTES).';';
+      }
+    }
+  }
+  //,変換
+  $price = str_replace(",", "", $data->price);
+  $price_total = str_replace(",", "", $data->price_total);
+  //メーカーキー取得
+  $maker = array_search((string)$data->maker,$_maker);
+
+  $pr_comment = "";
+  foreach ($data->pr as $k => $v) {
+    foreach($v as $k2 => $v2) {
+      if ($k2 == 'pr_comment') {
+        $pr_comment .= $v2;
+      }
+    }
+  }
+  $shop_hp_name = $shop_name = "";
+  foreach ($data->shop as $k => $v) {
+    foreach($v as $k2 => $v2) {
+      if ($k2 == 'shop_hp_name') {
+        $shop_hp_name .= $v2;
+      }
+      if ($k2 == 'shop_name') {
+        $shop_name .= $v2;
+      }
+    }
+  }
+
+  $sql .= $i > 0 ? ',' : '';
+  $sql .= "('',";
+  $sql .= '"'.$data->stock_number.'",';
+  $sql .= '"'.$data->up_date.'",';
+  $sql .= '"'.$data->update_date.'",';
+  $sql .= '"'.$data->status.'",';
+  $sql .= '"'.$data->status_name.'",';
+  $sql .= '"'.$data->business_count.'",';
+  $sql .= '"'.$img_url.'",';
+  $sql .= '"'.$img_comment.'",';
+  $sql .= '"'.$price.'",';
+  $sql .= '"'.$price_total.'",';
+  $sql .= $maker == 'false' ? '"99",' : '"'.$maker.'",';
+  $sql .= '"'.htmlspecialchars($data->car_name, ENT_QUOTES).'",';
+  $sql .= '"'.htmlspecialchars($data->grade, ENT_QUOTES).'",';
+  $sql .= '"'.htmlspecialchars($data->grade_add, ENT_QUOTES).'",';
+  $sql .= '"'.$data->year.'",';
+  $sql .= '"'.$data->year_jpn.'",';
+  $sql .= '"'.$data->year_yyyy.'",';
+  $sql .= '"'.$data->year_yyyymm.'",';
+  $sql .= '"'.$data->model_number.'",';
+  $sql .= '"'.$data->frame_number.'",';
+  $sql .= '"'.$data->distance.'",';
+  $sql .= '"'.$data->repair.'",';
+  $sql .= '"'.$data->warranty_type.'",';
+  $sql .= '"'.$data->warranty1.'",';
+  $sql .= '"'.$data->warranty2.'",';
+  $sql .= '"'.$data->inspection.'",';
+  $sql .= '"'.$data->inspection_jpn.'",';
+  $sql .= '"'.$data->inspection_yyyy.'",';
+  $sql .= '"'.$data->inspection_yyyymm.'",';
+  $sql .= '"'.$data->color.'",';
+  $sql .= '"'.$data->exterior_color.'",';
+  $sql .= '"'.$data->mission.'",';
+  $sql .= '"'.$data->door.'",';
+  $sql .= '"'.$data->drive.'",';
+  $sql .= '"'.$data->gas.'",';
+  $sql .= '"'.$data->type.'",';
+  $sql .= '"'.$data->special_note.'",';
+  $sql .= '"'.$pr_comment.'",';
+  $sql .= '"'.$shop_hp_name.'",';
+  $sql .= '"'.$shop_name.'"';
+  $sql .= ")";
+  $i++;
+}
+
+if ($i > 0) {
+  $dbh->exec("TRUNCATE TABLE {$tbName}");
+  $dbh->exec($sql);
+  echo $sql;
+
+  $tmp = '';
+  $sql = "SELECT `maker`, `car_name` FROM `car` WHERE 1 GROUP BY `car_name` ORDER BY `maker`, `car_name` ASC";
+  $res = $dbh->query($sql);
+  $rows = $res->fetchAll(PDO::FETCH_ASSOC);
+  foreach ($rows as $row) {
+    $tmp .= "\n\$array['car'][{$row['maker']}][]= '{$row['car_name']}';";
+  }
+
+  $file = '/var/www/vhosts/os-inc.jp/httpdocs/inc/carData.inc';
+  // 結果をファイルに書き出します
+  $tmp = "<?php".$tmp."\n?>";
+  file_put_contents($file, $tmp, LOCK_EX);
+}
+
+/*
+      $fields_values2 = array(
+        'path'  =>$path,
+        'node'   =>$node
+      );
+      $sql = create_dml_sql($tbName,$fields_values2,'update',"no = {$no}");
+*/

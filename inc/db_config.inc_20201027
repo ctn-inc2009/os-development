@@ -1,0 +1,21 @@
+<?php
+$config = array(//データベースタイプ
+				'db_type' => 'mysql',
+				//データベースホスト
+				'db_host' => 'localhost',
+				//データベース名
+				'db_name' => 'tb_worldofstar',
+				//ユーザー名
+				'db_user' => 'worldofstar',
+				//パスワード
+				'db_pass' => 'eP7RSfd2',
+				);
+
+$dsn = sprintf("%s://%s:%s@%s/%s",
+				$config['db_type'],
+				$config['db_user'],
+				$config['db_pass'],
+				$config['db_host'],
+				$config['db_name']
+				);
+?>
