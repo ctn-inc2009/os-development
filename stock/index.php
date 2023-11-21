@@ -1,10 +1,10 @@
 <?php
 //ライブラリ読み込み
 //require "../os-check/inc/option.inc";
-require_once ('../inc/option.inc');
-require incPATH."/library.inc";
-require incPATH."/define.inc";
-require incPATH."/pagination.class.php";
+require_once('../inc/option.inc');
+require incPATH . "/library.inc";
+require incPATH . "/define.inc";
+require incPATH . "/pagination.class.php";
 
 $conTitle = '在庫車情報';
 $pageTitle = '';
@@ -20,209 +20,202 @@ if (!empty($_FORM['submit'])) {
 
 //レイアウト読み込み
 $_cssList2[] = '/os-check/css/stock.css';
-require incPATH."/layout.inc";
-require incPATH."/search.inc";
+require incPATH . "/layout.inc";
+require incPATH . "/search.inc";
 
 $_order[1] = 'price DESC';
 $_order[2] = 'price ASC';
-$order = 'price ASC'; $current = array();
+$order = 'price ASC';
+$current = array();
 if (!empty($_order[$_FORM['order']])) {
   $order = $_order[$_FORM['order']];
   $current[$_FORM['order']] = ' class="current"';
 }
 
-// try {
-//   // データベースの接続
-//   $dbh = db_construct();
+// 現在のページのパラメータを取得
+$page = isset($_GET['page']) ? $_GET['page'] : 1;
+$sort = isset($_GET['order']) ? $_GET['order'] : 1;
+$cname = isset($_GET['cname']) ? $_GET['cname'] : '';
+$price = isset($_GET['price']) ? $_GET['price'] : '';
+$totalItems = isset($_SESSION['total_items']) ? $_SESSION['total_items'] : 0;
+$itemsPerPage = 24;
+$priceRange = isset($_GET['price']) ? $_GET['price'] : '';
+// 価格帯パラメータ取得の処理
+$minPrice = '';
+$maxPrice = '';
+if (!empty($priceRange)) {
+    $priceParts = explode('-', $priceRange);
+    if (count($priceParts) == 2) {
+        $minPrice = intval($priceParts[0]) * 10000;
+        $maxPrice = intval($priceParts[1]) * 10000;
+    } else {
+      $minPrice = '';
+      $maxPrice = '';
+    }
+} else {
+  $minPrice = '';
+  $maxPrice = '';
+}
+?>
 
-//   $page = !empty($_FORM['page']) ? $_FORM['page'] : 1;
-//   $limit = 12; //1ページあたりの表示件数
-
-//   $column = "*";
-//   $sql = "SELECT SQL_CALC_FOUND_ROWS {$column} FROM `car`
-//           WHERE car_name != '' AND price > 0 ";
-//   sql_where_str_m("maker",$_FORM['maker'],$sql,1);
-//   sql_where_str_name("car_name",$_FORM['cname'],$sql,1);
-//   sql_where_str_name("type",$_FORM['type'],$sql,1);
-//   //$sql .= " AND car_name LIKE '%{$_FORM['cname']}' ";
-//   if (!empty($_FORM['price'])) {
-//     $a = explode('-', $_FORM['price']);
-//     $tmp = $a[0] * 10000;
-//     $tmp2 = $a[1] * 10000;
-//     sql_where_chku("price",$tmp,$sql,1);
-//     sql_where_chkd("price",$tmp2,$sql,1);
-//   }
-//   //sql_where_str_m("store",$_FORM['store'],$sql,1);
-
-//   $pointer = ($page-1)*$limit;
-//   $sql .= " ORDER BY {$order}";
-//   $sql .= " LIMIT ".$pointer.",".$limit;
-
-//   //echo $sql;
-//   unset($res);
-//   $res = $dbh->query($sql);
-//   $rows = $res->fetchAll(PDO::FETCH_ASSOC);
-
-//   unset($res);
-//   $res = $dbh->query("SELECT FOUND_ROWS()");
-//   $row_max = $res->fetchColumn();
-//   $maxpage = get_maxpage($row_max,$limit);
-
-//   $data = '';
-//   foreach ( $rows as $row ) {
-//     $no = $row['no'];
-//     $sno = $row['stock_number'];
-//     $color = !empty($row['color']) ? $row['color'] : '';
-//     $maker = $_maker[$row['maker']];
-//     $cname = $row['car_name'];
-//     $price = $row['price'];
-//     $status = $row['status'];
-//     $frame_number = substr($row['frame_number'],-3);
-
-//     $filename = '/img/noimage.jpg';
-//     $a = explode(';', $row['images']);
-//     if (!empty($a[0])) $filename = str_replace('http:','',$a[0]);//https警告回避$
-//     $image = '<img src="'.$filename.'" alt="'.$cname.'" class="sp_img" />';
-
-//     $detal_btn = '';
-//     $detal_link = '';
-
-//     $link = urlencode('管理番号'.$sno.'　'.$maker.'　'.$cname.'　'.$row['grade'].'　'.$color);
-
-//     if (strpos($status,'売却') !== false) {
-//       $price = '<span class="red">SOLD OUT</span>';
-//       $detal_link = '<figure class="image">'.$image.'</figure>';
-//     } else {
-//       $count = strlen($price);
-//       if($count <= 8) {
-//         $price_min = $price / 10000;
-//       }
-//       $price = '<span class="red">'.$price_min.'</span>万円';
-//       $detal_link = <<< EOD
-//       <figure class="image"><a href="{$sno}.php">
-//         {$image}
-//       </a></figure>
-// EOD;
-//       $detal_btn = <<< EOD
-//       <li class="contactBtn"><a href="form.php?store={$s}&cname={$link}">在庫お問い合わせ</a></li>
-//       <li class="detailBtn"><a href="{$sno}.php">詳細はこちら</a></li>
-// EOD;
-//     }
-//     $nensiki = add_gengo_jcm($row['year'], "en");
-
-//     $kensa = $row['inspection'];
-
-//     //$rec = $row['isFeatured'] == 1 ? '<li class="rec">オススメ</li>' : '';
-//     $rdata = '';
-//     $rdata = <<< EOD
-//       <tr><th colspan="2" class="price">{$price}</th></tr>
-//       <tr><th>年式</th><td>{$nensiki}</td></tr>
-//       <tr><th>車検</th><td>{$kensa}</td></tr>
-//       <tr><th>色</th><td>{$color}</td></tr>
-//       <tr><th>走行距離</th><td>{$row['distance']}</td></tr>
-//       <tr><th>車台番号</th><td>{$frame_number}</td></tr>
-// EOD;
-
-//   $data .= <<< EOD
-// <li>
-//   <h3 class="name">{$cname} <span>{$row['grade']}</span></h3>
-//   <div class="clearfix">
-//     {$detal_link}
-//     <div class="rBox">
-//       <!-- <p class="store store{$s}">在庫店：{$_store[$s]}</p> -->
-//       <ul class="tagList clearfix">
-//         {$rec}
-//       </ul>
-//       <table class="data clear">
-// {$rdata}
-//       </table>
-//       <ul class="carContact">
-//         <li class="tel-zaiko"><p class="source"><a href="tel:072-289-8070"><span class="txt">お問い合わせ</span><span class="tel">072-289-8070</span></a></p></li>
-//         {$detal_btn}
-//       </ul>
-//     </div>
-//   </div>
-// </li>\n
-// EOD;
-//   }
-// } catch (PDOException $e) {
-//   echo "失敗しました。" . $e->getMessage();
-//   die();
-// }
-?><!DOCTYPE html>
+<!--************************** htmlの領域 **************************-->
+<!DOCTYPE html>
 <html lang="ja">
+
 <head>
-<?php echo $meta; ?>
-<?php echo $css; ?>
-<?php echo $js; ?>
-<?php echo $searchjs; ?>
+  <?php echo $meta; ?>
+  <?php echo $css; ?>
+  <?php echo $js; ?>
+  <?php echo $searchjs; ?>
+  <!-- <style>
+    #zaikoList .image {
+      position: relative;
+      display: block;
+      overflow: hidden;
+      padding-top: 70.25%;
+      position: relative;
+      width: 100%;
+    }
+
+    .clearfix img {
+      height: 100%;
+      width: 100%;
+      left: 0;
+      top: 0;
+      position: absolute;
+    }
+  </style> -->
 </head>
 
 <body id="stock">
-<?= $gtm; ?>
+  <?= $gtm; ?>
+  <div id="wrapper">
+    <?php echo $header; ?>
+    <div id="contents">
+      <div class="pagettl">
+        <img src="/os-check/img/stock_h2.jpg" class="ttl_bg">
+        <h2><?php echo $conTitle; ?><span class="en">Stock</span></h2>
+      </div><!-- .pagettl -->
 
-<div id="wrapper">
-<?php echo $header; ?>
+      <ul id="pan" class="inner">
+        <li><a href="/">ホーム</a></li>
+        <li><?php echo $conTitle; ?></li>
+      </ul>
 
-<div id="contents">
-  <div class="pagettl">
-    <img src="/os-check/img/stock_h2.jpg" class="ttl_bg">
-    <h2><?php echo $conTitle; ?><span class="en">Stock</span></h2>
-  </div><!-- .pagettl -->
+      <article class="inner">
 
-  <ul id="pan" class="inner">
-    <li><a href="/">ホーム</a></li>
-    <li><?php echo $conTitle; ?></li>
-  </ul>
+        <div class="salecoupon_bnr">
+          <a href="https://docs.google.com/forms/d/e/1FAIpQLSfQi-5F4BN3ApGXM5qZ_cr7fdVV2xZ1HQzJlc8OXGrqmTDqlA/viewform" target="_brank">
+            <img src="/os-check/img/top/salecoupon_bnr.jpg?20230901">
+        </div>
+        </a>
 
-<article class="inner">
+        <section>
+          <!-- <?php echo $tokuten; ?> -->
+          <?php echo $searchBox; ?>
+          <?php
+          $qs = $_FORM;
+          unset($qs['page']);
+          $qs2 = $qs; //表示順
+          $qs = !empty($qs) ? http_build_query($qs) : '';
+          unset($qs2['order']);
+          $qs2 = !empty($qs2) ? http_build_query($qs2) : '';
 
-<div class="salecoupon_bnr">
-<a href="https://docs.google.com/forms/d/e/1FAIpQLSfQi-5F4BN3ApGXM5qZ_cr7fdVV2xZ1HQzJlc8OXGrqmTDqlA/viewform" target="_brank">
-  <img src="/os-check/img/top/salecoupon_bnr.jpg?20230901"></div>
-</a>
+          $p = new pagination;
+          $p->items($totalItems);
+          $p->limit($itemsPerPage);
+          if (!empty($qs)) {
+            $p->target("index.php?" . $qs);
+          }
+          $p->currentPage($page);
+          $p->show();
+          ?>
+          <div class="clearfix">
+            <p class="fleft">検索結果：<em class="big red"></em>件</p>
+            <p class="order">
+              [ 価格： <a href="<?php echo $_SERVER['PHP_SELF'] . "?" . $qs2 . "&order=1"; ?>" <?php echo $current[1] ?>>高</a>
+              ｜ <a href="<?php echo $_SERVER['PHP_SELF'] . "?" . $qs2 . "&order=2"; ?>" <?php echo $current[2] ?>>安</a> ]</p>
+          </div>
+          <ul id="zaikoList" class="flex"></ul>
+        </section>
 
-<section>
-<!-- <?php echo $tokuten; ?> -->
-<?php echo $searchBox; ?>
-<?php
-$qs = $_FORM;
-unset($qs['page']);
-$qs2 = $qs; //表示順
-$qs = !empty($qs) ? http_build_query($qs) : '';
-unset($qs2['order']);
-$qs2 = !empty($qs2) ? http_build_query($qs2) : '';
+      </article><!-- /.inner -->
+    </div><!--#contents-->
+    <?php echo $footer; ?>
+  </div><!--#wrapper-->
 
-$p = new pagination;
-$p->items($row_max);
-$p->limit($limit);
-if(!empty($qs)){
-  $p->target("index.php?".$qs);
-}
+  <script>
+    $(function() {
+      let page = <?php echo $page; ?>;
+      let itemsPerPage = '<?php echo $itemsPerPage; ?>';
+      let sort = <?php echo $sort; ?>;
+      let searchCname = '<?php echo $cname; ?>';
+      let searchMaxPrice = '<?php echo $maxPrice; ?>';
+      let searchMinPrice = '<?php echo $minPrice; ?>';
+      $.ajax({
+        type: "POST",
+        dataType: "json",
+        url: "./check_api.php",
+        data: {
+          page,
+          itemsPerPage,
+          sort,
+          searchCname: encodeURIComponent(searchCname),
+          searchMaxPrice,
+          searchMinPrice,
+        },
+      }).done(function(res) {
+        console.log(res.data);
+        let htmls = '';
+        if (res.data.length > 0) {
+          $(".fleft em").text(res.totalItems);
+          res.data.forEach(item => {
+            htmls += `<li>
+                    <h3 class="name">${item.cname} <span>${item.grade}</span></h3>
+                    <div class="clearfix">
+                      ${item.status === '売却' ? `
+                      <figure class="image">
+                        <img src="${item.img_url}" alt="${item.cname}" class="sp_img" />
+                      </figure>` : `
+                      <figure class="image">
+                        <a href="details.php?sno=${item.sno}">
+                          <img src="${item.img_url}" alt="${item.cname}" class="sp_img" />
+                        </a>
+                      </figure>`}
+                      <div class="rBox">
+                        <ul class="tagList clearfix">
+                          ${item.rec}
+                        </ul>
+                        <table class="data clear">
+                          <tr><th colspan="2" class="price">${item.status === '売却' ? `
+                            <span class="red">SOLD OUT</span>` : `
+                            <span class="red">${item.price}</span>万円`}</th></tr>
+                          <tr><th>年式</th><td>${item.year_jpn}</td></tr>
+                          <tr><th>車検</th><td>${item.inspection}</td></tr>
+                          <tr><th>色</th><td>${item.color}</td></tr>
+                          <tr><th>走行距離</th><td>${item.distance}</td></tr>
+                          <tr><th>車台番号</th><td>${item.frame_number}</td></tr>
+                        </table>
+                        <ul class="carContact">
+                          <li class="tel-zaiko"><p class="source"><a href="tel:072-289-8070"><span class="txt">お問い合わせ</span><span class="tel">072-289-8070</span></a></p></li>
+                          <li class="contactBtn"><a href="form.php?store=${item.sno}&cname=${item.link}">在庫お問い合わせ</a></li>
+                          <li class="detailBtn"><a href="details.php?sno=${item.sno}">詳細はこちら</a></li>
+                        </ul>
+                      </div>
+                    </div>
+                </li>`;
+          });
 
-$p->currentPage($page);
-$p->show();
-?>
-<div class="clearfix">
-<p class="fleft">検索結果：<em class="big red"><?= $row_max; ?></em>件</p>
-<p class="order">
-  [ 価格： <a href="<?php echo $_SERVER['PHP_SELF']."?".$qs2."&order=1"; ?>"<?php echo $current[1] ?>>高</a>
-   ｜  <a href="<?php echo $_SERVER['PHP_SELF']."?".$qs2."&order=2"; ?>"<?php echo $current[2] ?>>安</a>  ]</p>
-</div>
-<?php
-  if(!empty($data)) {
-  echo '<ul id="zaikoList" class="flex">'.$data.'</ul>';
-    $p->show();
-  } else {
-  echo '<p class="center">お探しの条件の車の登録がありませんでした。</p>';
-  }
-?>
-</section>
-
-</article><!-- /.inner -->
-</div><!--#contents-->
-<?php echo $footer; ?>
-</div><!--#wrapper-->
-
+          $("#zaikoList").html(htmls);
+        } else {
+          $("#zaikoList").html('<p class="center">お探しの条件の車の登録がありませんでした。</p>');
+        }
+      }).fail(function(jqXHR, textStatus, errorThrown) {
+        console.error("リクエストが失敗しました：" + textStatus, errorThrown);
+        alert("リクエストが失敗しました。");
+      });
+    });
+  </script>
 </body>
+
 </html>

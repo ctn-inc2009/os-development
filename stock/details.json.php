@@ -15,8 +15,25 @@ if (empty($_SESSION['sp'])) {
 $sno = !empty($_FORM['sno']) ? $_FORM['sno'] : 0;
 
 $url = "https://auto.jocar.jp/HPWebservice/GetCarDetail.aspx?KEY_ID={$key_id}&HNCD={$hncd}&GM={$sno}";
-$xml = simplexml_load_file($url);
-$sql = '';
+
+// APIからデータを取得
+$contents = file_get_contents($url);
+
+// API呼び出しエラーを確認
+if ($contents === false) {
+  http_response_code(500);
+  echo 'APIからデータを取得中にエラーが発生しました';
+  exit;
+}
+
+// XMLデータを配列に変換
+$xml = simplexml_load_string($contents);
+if ($xml === false) {
+  http_response_code(500);
+  echo 'XMLデータの変換中にエラーが発生しました';
+  exit;
+}
+
 foreach($xml->stock_info as $data) {
     $maker = $data->maker;
     $cname = mb_convert_kana($data->car_name, 'KV');
@@ -227,7 +244,7 @@ $carContact = <<< EOD
 <ul class="carContactList flex flex-between">
   <li><a href="#toiawase" class="contact"><span class="vh_ctr">ネットで相談<br>在庫お問合わせ</span></a></li>
   <li><a href="tel:{$telNo}" class="tel"><span class="vh_ctr">今すぐ電話で相談<br><i class="fas fa-phone-alt"></i> {$telNo}</span></a></li>
-  <li><a href="/reserve/" class="reserve"><span class="vh_ctr">来店予約</span></a></li>
+  <li><a href="../reserve/" class="reserve"><span class="vh_ctr">来店予約</span></a></li>
 </ul><!--/carContact-->\n
 EOD;
 
@@ -299,7 +316,10 @@ $details = <<< EOD
 </div><!--/toiawase-->\n
 EOD;
 
-$data = json_encode($details);
-echo <<< EOT
-{$data}
-EOT;
+header('Content-Type: application/json');
+$response = [
+    'maker' => $maker,
+    'cname' => $cname,
+    'data' => $details,
+];
+echo json_encode($response);
