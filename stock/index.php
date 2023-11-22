@@ -4,7 +4,6 @@
 require_once('../inc/option.inc');
 require incPATH . "/library.inc";
 require incPATH . "/define.inc";
-require incPATH . "/pagination.class.php";
 
 $conTitle = '在庫車情報';
 $pageTitle = '';
@@ -32,26 +31,25 @@ if (!empty($_order[$_FORM['order']])) {
   $current[$_FORM['order']] = ' class="current"';
 }
 
-// 現在のページのパラメータを取得
+// 初期化
+$itemsPerPage = 24;
 $page = isset($_GET['page']) ? $_GET['page'] : 1;
 $sort = isset($_GET['order']) ? $_GET['order'] : 1;
 $cname = isset($_GET['cname']) ? $_GET['cname'] : '';
 $price = isset($_GET['price']) ? $_GET['price'] : '';
-$totalItems = isset($_SESSION['total_items']) ? $_SESSION['total_items'] : 0;
-$itemsPerPage = 24;
 $priceRange = isset($_GET['price']) ? $_GET['price'] : '';
 // 価格帯パラメータ取得の処理
 $minPrice = '';
 $maxPrice = '';
 if (!empty($priceRange)) {
-    $priceParts = explode('-', $priceRange);
-    if (count($priceParts) == 2) {
-        $minPrice = intval($priceParts[0]) * 10000;
-        $maxPrice = intval($priceParts[1]) * 10000;
-    } else {
-      $minPrice = '';
-      $maxPrice = '';
-    }
+  $priceParts = explode('-', $priceRange);
+  if (count($priceParts) == 2) {
+    $minPrice = intval($priceParts[0]) * 10000;
+    $maxPrice = intval($priceParts[1]) * 10000;
+  } else {
+    $minPrice = '';
+    $maxPrice = '';
+  }
 } else {
   $minPrice = '';
   $maxPrice = '';
@@ -113,23 +111,7 @@ if (!empty($priceRange)) {
         <section>
           <!-- <?php echo $tokuten; ?> -->
           <?php echo $searchBox; ?>
-          <?php
-          $qs = $_FORM;
-          unset($qs['page']);
-          $qs2 = $qs; //表示順
-          $qs = !empty($qs) ? http_build_query($qs) : '';
-          unset($qs2['order']);
-          $qs2 = !empty($qs2) ? http_build_query($qs2) : '';
-
-          $p = new pagination;
-          $p->items($totalItems);
-          $p->limit($itemsPerPage);
-          if (!empty($qs)) {
-            $p->target("index.php?" . $qs);
-          }
-          $p->currentPage($page);
-          $p->show();
-          ?>
+          <div class="pagination_wrap"></div>
           <div class="clearfix">
             <p class="fleft">検索結果：<em class="big red"></em>件</p>
             <p class="order">
@@ -165,10 +147,11 @@ if (!empty($priceRange)) {
           searchMinPrice,
         },
       }).done(function(res) {
-        console.log(res.data);
         let htmls = '';
+        let telNo = '072-289-8070'
         if (res.data.length > 0) {
           $(".fleft em").text(res.totalItems);
+          $(".pagination_wrap").html(res.pagination);
           res.data.forEach(item => {
             htmls += `<li>
                     <h3 class="name">${item.cname} <span>${item.grade}</span></h3>
@@ -190,14 +173,14 @@ if (!empty($priceRange)) {
                           <tr><th colspan="2" class="price">${item.status === '売却' ? `
                             <span class="red">SOLD OUT</span>` : `
                             <span class="red">${item.price}</span>万円`}</th></tr>
-                          <tr><th>年式</th><td>${item.year_jpn}</td></tr>
+                          <tr><th>年式</th><td>${item.year_style}</td></tr>
                           <tr><th>車検</th><td>${item.inspection}</td></tr>
                           <tr><th>色</th><td>${item.color}</td></tr>
                           <tr><th>走行距離</th><td>${item.distance}</td></tr>
                           <tr><th>車台番号</th><td>${item.frame_number}</td></tr>
                         </table>
                         <ul class="carContact">
-                          <li class="tel-zaiko"><p class="source"><a href="tel:072-289-8070"><span class="txt">お問い合わせ</span><span class="tel">072-289-8070</span></a></p></li>
+                          <li class="tel-zaiko"><p class="source"><a href="tel:${telNo}"><span class="txt">お問い合わせ</span><span class="tel">${telNo}</span></a></p></li>
                           <li class="contactBtn"><a href="form.php?store=${item.sno}&cname=${item.link}">在庫お問い合わせ</a></li>
                           <li class="detailBtn"><a href="details.php?sno=${item.sno}">詳細はこちら</a></li>
                         </ul>
@@ -205,7 +188,6 @@ if (!empty($priceRange)) {
                     </div>
                 </li>`;
           });
-
           $("#zaikoList").html(htmls);
         } else {
           $("#zaikoList").html('<p class="center">お探しの条件の車の登録がありませんでした。</p>');

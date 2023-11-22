@@ -5,28 +5,6 @@ require incPATH . "/library.inc";
 require incPATH . "/define.inc";
 
 $sno = !empty($_GET['sno']) ? $_GET['sno'] : 0;
-// try {
-//   // データベースの接続
-//   $dbh = db_construct();
-
-//   $sql = "SELECT * FROM `car`
-//           WHERE price > 0 AND stock_number = '{$sno}'";
-//   $stmt = $dbh->prepare($sql);
-//   $stmt->bindValue(1, $no, PDO::PARAM_STR);
-//   $stmt->execute();
-//   $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-//   if (!empty($rows)) {
-//     $row = $rows[0];
-//     $no = $row['no'];
-//     $cname = $row['car_name'];
-//   } else {
-//     header("HTTP/1.1 410 Gone");
-//     header("Location:index.php");
-//   }
-// } catch (PDOException $e) {
-//   echo "失敗しました。" . $e->getMessage();
-//   die();
-// }
 
 $metaDescription = "";
 
@@ -195,7 +173,6 @@ require incPATH . "/layout.inc";
       });
 
       function anothersShow(cname, maker) {
-        let itemsPerPage = 500;
         let searchCname = cname;
         let searchMaker = maker;
         $.ajax({
@@ -203,7 +180,6 @@ require incPATH . "/layout.inc";
           dataType: "json",
           url: "./check_api.php",
           data: {
-            itemsPerPage,
             searchCname: encodeURIComponent(searchCname),
             searchMaker: encodeURIComponent(searchMaker)
           },
@@ -211,15 +187,7 @@ require incPATH . "/layout.inc";
           let htmls = '';
           if (res.data.length > 0) {
             $(".fleft em").text(res.totalItems);
-            let anothers = [];
-            res.data.map(item => {
-              console.log(sno);
-              console.log(item.sno);
-              if (sno !== item.sno) {
-                anothers.push(item);
-              }
-            });
-            console.log(anothers);
+            let anothers = res.data.filter(item => sno !== item.sno);
             if (anothers.length > 0) {
               anothers.sort(() => Math.random() - 0.5);
               let randomFour = anothers.slice(0, 4);
@@ -230,7 +198,7 @@ require incPATH . "/layout.inc";
                   <li><a href="details.php?sno=${item.sno}">
                       <figure><img src="${item.img_url}" alt="${item.maker +' '+ item.cname}" /></figure>
                       <table>
-                          <tr><th>年式</th><td>${item.year_jpn}</td></tr>
+                          <tr><th>年式</th><td>${item.year}</td></tr>
                           <tr><th>走行距離</th><td>${item.distance}</td></tr>
                           <tr><th>検査期限</th><td>${item.inspection}</td></tr>
                           <tr><td colspan="2" class="price">価格:<span>${item.price}</span></td></tr>

@@ -76,9 +76,11 @@ Author URI: http://www.mis-algoritmos.com
 		function __construct() {}
 		function show(){
 				if(!$this->calculate)
-					if($this->calculate())
-						echo "<div class=\"$this->className\">$this->txt $this->pagination</div>\n";
-			}
+					if($this->calculate()) {
+						$output = "<div class=\"$this->className\">$this->txt $this->pagination</div>\n";
+					}
+					return $output;
+				}
 		function getOutput(){
 				if(!$this->calculate)
 					if($this->calculate())

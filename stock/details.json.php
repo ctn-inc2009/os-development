@@ -1,13 +1,13 @@
 <?php
 // ライブラリ読込み
 require "../inc/option.inc";
-require incPATH."/library.inc";
-require incPATH."/define.inc";
+require incPATH . "/library.inc";
+require incPATH . "/define.inc";
 
 $ua = 'pc';
 $tmp = $_SERVER['HTTP_USER_AGENT'];
 if (empty($_SESSION['sp'])) {
-  if((strpos($tmp,'iPhone')!==false)||(strpos($tmp,'iPod')!==false)||(strpos($tmp,'Android')!==false) && (strpos($tmp,'Mobile')!==false)) {
+  if ((strpos($tmp, 'iPhone') !== false) || (strpos($tmp, 'iPod') !== false) || (strpos($tmp, 'Android') !== false) && (strpos($tmp, 'Mobile') !== false)) {
     $ua = 'sp';
   }
 }
@@ -26,7 +26,7 @@ if ($contents === false) {
   exit;
 }
 
-// XMLデータを配列に変換
+// SimpleXMLElementに変換
 $xml = simplexml_load_string($contents);
 if ($xml === false) {
   http_response_code(500);
@@ -34,85 +34,93 @@ if ($xml === false) {
   exit;
 }
 
-foreach($xml->stock_info as $data) {
-    $maker = $data->maker;
-    $cname = mb_convert_kana($data->car_name, 'KV');
-    //,変換
-    $price = str_replace(",", "", $data->price);
-    //$price_total = str_replace(",", "", $data->price_total);
-    if ($price < 0) {
+$detailsData = $xml->stock_info;
+
+if ($detailsData) {
+  foreach ($detailsData as $row) {
+    $maker = isset($row->maker) ? $row->maker : '';
+    $cname = isset($row->car_name) ? mb_convert_kana($row->car_name, 'KV') : '';
+    $price = isset($row->price) ? $row->price : '';
+    //変換
+    if (strpos($row->status, '売却') !== false) {
       $price = '<span class="red">SOLD OUT</span>';
     } else {
-      $count = strlen($price);
-      if($count <= 8) {
-        $price_min = $price / 10000;
+      if (!empty($price)) {
+        $price_str = str_replace(',', '', $price);
+        if (is_numeric($price_str)) {
+          $count = strlen($price_str);
+          $price = intval($price_str);
+          if ($count < 8) {
+            $price_val = $price / 10000;
+          } else {
+            $price_val = number_format($price / 10000, 4, '.', ',');
+          }
+        } else {
+          $price_val = $price_str;
+        }
       }
-      $price = '本体価格<em class="red">'.$price_min.'</em>万円(税込)';
+      $price = '本体価格<em class="red">' . $price_val . '</em>万円(税込)';
     }
-    $nensiki = add_gengo_jcm($data->year, "en");
-
-    $kensa = $data->inspection;
-    $grade = $data->grade;
-
-    //系統色（白）など 使わない
-    //$color = !empty($data->color) ? $data->color : '';
+    $year_style = isset($row->year) ? add_gengo_jcm($row->year, 'en') : '';
+    $inspection = isset($row->inspection) ? $row->inspection : '';
+    $grade = isset($row->grade) ? $row->grade :  '';
     //色（ホワイトパールクリスタルシャイン）など
-    $color = !empty($data->exterior_color) ? $data->exterior_color : '';
+    $color = isset($row->exterior_color) ? $row->exterior_color : '';
     //在庫状況 使わない
-    $status = !empty($data->status) ? $data->status : '-';
+    $status = !empty($row->status) ? $row->status : '-';
     //商談件数 使わない
-    $business_count = $data->business_count > 0 ? $data->business_count : '-';
+    $business_count = $row->business_count > 0 ? $row->business_count : '-';
     //型式
-    $model_number = $data->model_number;
+    $model_number = isset($row->model_number) ? $row->model_number : '';
     //車台ナンバー
-    $frame_number = $data->frame_number;
+    $frame_number = isset($row->frame_number) ? $row->frame_number : '';
     //内装色
-    $interior_color = $data->interior_color;
+    $interior_color = isset($row->interior_color) ?: $row->interior_color;
     //走行距離
     $distance = '-';
-    if (!empty($data->distance)) {
-      $tmp = str_replace([',', 'km'], '', $data->distance)/10000;
-      $distance = '<em>'.$tmp.'万</em>km';
+    if (!empty($row->distance)) {
+      $tmp = str_replace([',', 'km'], '', $row->distance) / 10000;
+      $distance = '<em>' . $tmp . '万</em>km';
     }
     //ミッション名
-    $mission = $data->mission;
+    $mission = isset($row->mission) ? $row->mission : '';
     //駆動
-    $drive = $data->drive;
+    $drive = isset($row->drive) ? $row->drive : '';
     //低燃費排出ガス
-    $gas = $data->gas;
+    $gas = isset($row->gas) ? $row->gas : '';
     //タイプ
-    $type = $data->type;
+    $type = isset($row->type) ? $row->type : '';
     //形状
-    $config = $data->config;
+    $config = isset($row->config) ? $row->config : '';
     //排気量
-    $displacement = !empty($data->displacement) ? $data->displacement : '-';
+    $displacement = !empty($row->displacement) ? $row->displacement : '-';
     //エンジン区分
-    $engine_type = $data->engine_type;
+    $engine_type = isset($row->engine_type) ? $row->engine_type : '';
     //乗車定員
-    $capacity = $data->capacity;
+    $capacity = isset($row->capacity) ? $row->capacity : '';
     //ドア数
-    $door = $data->door;
+    $door = isset($row->door) ? $row->door : '';
     //車検日
-    $inspection = $data->inspection;
+    $inspection = isset($row->inspection) ? $row->inspection : '';
     //修復歴
-    $repair = $data->repair;
+    $repair = isset($row->repair) ? $row->repair : '';
     //リサイクル状況
-    $recycle = $data->recycle;
+    $recycle = isset($row->recycle) ? $row->recycle  : '';
     //保証_1
-    $warranty1 = $data->warranty1;
+    $warranty1 = isset($row->warranty1) ? $row->warranty1 : '';
     //保証_2
-    $warranty2 = $data->warranty2;
+    $warranty2 = isset($row->warranty2) ? $row->warranty2 : '';
     //定期点検整備
-    $maintenance = $data->maintenance;
+    $maintenance = isset($row->maintenance) ? $row->maintenance : '';
     //整備費用
-    $maintenance_cost = $data->maintenance_cost;
+    $maintenance_cost = isset($row->maintenance_cost) ? $row->maintenance_cost : '';
     //整備手帳
-    $maintenance_note = $data->maintenance_note;
+    $maintenance_note = isset($row->maintenance_note) ? $row->maintenance_note : '';
     //車歴
-    $history = $data->history;
+    $history = isset($row->history) ? $row->history : '';
 
     //お問い合わせ
-    $link = '管理番号'.$sno.'　'.$cname.'　'.$grade.'　'.$color;
+    $link = '管理番号' . $sno . '　' . $cname . '　' . $grade . '　' . $color;
 
     //スライド用クーポン
     // for($i = 1; $i <= 10; $i++){
@@ -127,54 +135,63 @@ foreach($xml->stock_info as $data) {
     //   }
     // }
 
-  //画像
-  $slide = $pager = ''; $j = 0;
-  foreach ($data->img as $k => $v) {
-    $j++;
-    foreach($v as $k2 => $v2) {
-      if ($k2 == 'img_comment') {
-        $comment = !empty($v2) ? '<p>'.$v2.'</p>' : '';
+    //画像
+    $slide = $pager = '';
+    $j = 0;
+    if (count($row->img) > 0) {
+      foreach ($row->img as $k => $v) {
+        $j++;
+        foreach ($v as $k2 => $v2) {
+          if ($k2 == 'img_comment') {
+            $comment = !empty($v2) ? '<p>' . $v2 . '</p>' : '';
+          }
+          if ($k2 == 'img_url') {
+            //https警告回避 httpから画像取る場合はhttp:を消す
+            $img_url = strpos($v2, 'http:') !== false ? str_replace('http:', '', $v2) : $v2;
+            $img = '<img src="' . $img_url . '" alt="' . $cname . '">';
+          }
+        }
+        $slide .= '<li><div class="img">' . $img . '</div>' . $comment . '</li>';
+        $pager .= '<li>' . $img . '</li>';
       }
-      if ($k2 == 'img_url') {
-        //https警告回避 httpから画像取る場合はhttp:を消す
-        $img_url = strpos($v2,'http:') !== false ? str_replace('http:','',$v2) : $v2;
-        $img = '<img src="'.$img_url.'" alt="'.$cname.'">';
+      $cnt = $j;
+    }
+
+    //装備情報
+    $equip = '';
+    if (count($row->equip) > 0) {
+      foreach ($row->equip as $k => $v) {
+        foreach ($v as $k2 => $v2) {
+          if ($k2 == 'equipment') {
+            $tmp = mb_convert_kana($v2, 'ASKV');
+            $equip .= '<li>' . $tmp . '</li>';
+          }
+        }
       }
     }
-    $slide .= '<li><div class="img">'.$img.'</div>'.$comment.'</li>';
-    $pager .= '<li>'.$img.'</li>';
-  }
-  $cnt = $j;
 
-  //装備情報
-  $equip = '';
-  foreach ($data->equip as $k => $v) {
-    foreach($v as $k2 => $v2) {
-      if ($k2 == 'equipment') {
-        $tmp = mb_convert_kana($v2,'ASKV');
-        $equip .= '<li>'.$tmp.'</li>';
+    //その他装備
+    $equipment_etc = isset($row->equipment_etc) ? $row->equipment_etc : '';
+
+    //PRコメント
+    $pr_comment = '';
+    if (count($row->pr) > 0) {
+      foreach ($row->pr as $k => $v) {
+        foreach ($v as $k2 => $v2) {
+          if ($k2 == 'pr_comment') {
+            $pr_comment .= nl2br($v2);
+          }
+        }
       }
     }
   }
-  //その他装備
-  $equipment_etc = $data->equipment_etc;
-
-  //PRコメント
-  $pr_comment = '';
-  foreach ($data->pr as $k => $v) {
-    foreach($v as $k2 => $v2) {
-      if ($k2 == 'pr_comment') {
-        $pr_comment .= nl2br($v2);
-      }
-    }
-  }
-
 }
+
 //画像
 $slider = '';
 if (!empty($slide)) {
-  if ($ua != 'pc'){
-    $slider .= '<div class="slide_cap">スライドで画像を確認できます。<span>全'.$cnt.'枚</span></div>';
+  if ($ua != 'pc') {
+    $slider .= '<div class="slide_cap">スライドで画像を確認できます。<span>全' . $cnt . '枚</span></div>';
     $slider_txt = '<p class="slide_notes">画像をクリックすると大きく表示できます。</p>';
   }
   $slider .= <<< EOD
@@ -279,9 +296,9 @@ $details = <<< EOD
       <p class="price">{$price}</p>
 
       <dl class="cdata flex">
-        <div><dt>年式</dt><dd><em>{$nensiki}</em></dd></div>
+        <div><dt>年式</dt><dd><em>{$year_style}</em></dd></div>
         <div><dt>走行距離</dt><dd>{$distance}</dd></div>
-        <div><dt>車検</dt><dd><em>{$kensa}</em></dd></div>
+        <div><dt>車検</dt><dd><em>{$inspection}</em></dd></div>
         <div><dt>修復歴</dt><dd><em>{$repair}</em></dd></div>
       </dl>
     </div>
@@ -318,8 +335,8 @@ EOD;
 
 header('Content-Type: application/json');
 $response = [
-    'maker' => $maker,
-    'cname' => $cname,
-    'data' => $details,
+  'maker' => $maker,
+  'cname' => $cname,
+  'data' => $details,
 ];
 echo json_encode($response);
