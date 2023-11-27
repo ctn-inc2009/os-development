@@ -41,7 +41,7 @@ require incPATH . "/layout.inc";
       <ul id="pan" class="inner">
         <li><a href="/">ホーム</a></li>
         <li><a href="./">車を探す</a></li>
-        <li><?= $cname; ?></li>
+        <li></li>
       </ul>
 
       <article class="inner">
@@ -124,52 +124,59 @@ require incPATH . "/layout.inc";
           sno: sno
         }
       }).done(function(res) {
-        let car_name = res.cname;
-        let maker = res.maker;
-        if (res) {
-          $('#data').html(res.data);
-        }
-        let slider = "#sliderInner ul"; // スライダー
-        let thumbnailItem = "#bx-pager ul li"; // サムネイル画像アイテム
+          if (res && !res.error) {
+            let car_name = res.cname;
+            let maker = res.maker;
+            $('#pan.inner li:last').text(car_name);
+            $('#data').html(res.data);
 
-        // サムネイル画像アイテムに data-index でindex番号を付与
-        $(thumbnailItem).each(function() {
-          let index = $(thumbnailItem).index(this);
-          $(this).attr("data-index", index);
-        });
+            let slider = "#sliderInner ul"; // スライダー
+            let thumbnailItem = "#bx-pager ul li"; // サムネイル画像アイテム
 
-        // スライダー初期化後、カレントのサムネイル画像にクラス「thumbnail-current」を付ける
-        // 「slickスライダー作成」の前にこの記述は書いてください。
-        $(slider).on('init', function(slick) {
-          let index = $(".slide-item.slick-slide.slick-current").attr("data-slick-index");
-          $(thumbnailItem + '[data-index="' + index + '"]').addClass("thumbnail-current");
-        });
+            // サムネイル画像アイテムに data-index でindex番号を付与
+            $(thumbnailItem).each(function() {
+              let index = $(thumbnailItem).index(this);
+              $(this).attr("data-index", index);
+            });
 
-        //slickスライダー初期化
-        $('#sliderInner ul').slick({
-          autoplay: true,
-          autoplaySpeed: 5000,
-          speed: 1000,
-          arrows: false,
-          fade: true,
-          infinite: false, //これはつけましょう。
-          appendArrows: $('#arrow')
-        });
-        //サムネイル画像アイテムをクリックしたときにスライダー切り替え
-        $(thumbnailItem).on('click', function() {
-          let index = $(this).attr("data-index");
-          $(slider).slick("slickGoTo", index, false);
-        });
+            // スライダー初期化後、カレントのサムネイル画像にクラス「thumbnail-current」を付ける
+            // 「slickスライダー作成」の前にこの記述は書いてください。
+            $(slider).on('init', function(slick) {
+              let index = $(".slide-item.slick-slide.slick-current").attr("data-slick-index");
+              $(thumbnailItem + '[data-index="' + index + '"]').addClass("thumbnail-current");
+            });
 
-        //サムネイル画像のカレントを切り替え
-        $(slider).on('beforeChange', function(event, slick, currentSlide, nextSlide) {
-          $(thumbnailItem).each(function() {
-            $(this).removeClass("thumbnail-current");
-          });
-          $(thumbnailItem + '[data-index="' + nextSlide + '"]').addClass("thumbnail-current");
-        });
+            //slickスライダー初期化
+            $('#sliderInner ul').slick({
+              autoplay: true,
+              autoplaySpeed: 5000,
+              speed: 1000,
+              arrows: false,
+              fade: true,
+              infinite: false, //これはつけましょう。
+              appendArrows: $('#arrow')
+            });
+            //サムネイル画像アイテムをクリックしたときにスライダー切り替え
+            $(thumbnailItem).on('click', function() {
+              let index = $(this).attr("data-index");
+              $(slider).slick("slickGoTo", index, false);
+            });
 
-        anothersShow(car_name, maker);
+            //サムネイル画像のカレントを切り替え
+            $(slider).on('beforeChange', function(event, slick, currentSlide, nextSlide) {
+              $(thumbnailItem).each(function() {
+                $(this).removeClass("thumbnail-current");
+              });
+              $(thumbnailItem + '[data-index="' + nextSlide + '"]').addClass("thumbnail-current");
+            });
+
+            anothersShow(car_name, maker);
+          } else {
+            window.location.href = 'index.php';
+          }
+      }).fail(function(jqXHR, textStatus, errorThrown) {
+        console.error("リクエストが失敗しました：" + textStatus, errorThrown);
+        alert("リクエストが失敗しました。");
       });
 
       function anothersShow(cname, maker) {
@@ -193,7 +200,6 @@ require incPATH . "/layout.inc";
               let randomFour = anothers.slice(0, 4);
               let htmls = "";
               randomFour.forEach(item => {
-                console.log(item);
                 htmls += `
                   <li><a href="details.php?sno=${item.sno}">
                       <figure><img src="${item.img_url}" alt="${item.maker +' '+ item.cname}" /></figure>
@@ -210,9 +216,12 @@ require incPATH . "/layout.inc";
               $(".otherList").html(htmls);
             }
           }
-        });
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+          console.error("リクエストが失敗しました：" + textStatus, errorThrown);
+          alert("リクエストが失敗しました。");
+        })
       }
-    });
+    })
   </script>
 </body>
 

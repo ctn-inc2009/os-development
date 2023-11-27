@@ -16,7 +16,7 @@ $url .= "&HIT_PER_PAGE={$itemsPerPage}&OFFSET_PAGE={$page}";
 // 検索の処理
 if (isset($_POST['searchCname'])) {
   $searchCname = mb_convert_encoding($_POST['searchCname'], "Shift_JIS");
-  $url .= "&CNM={$searchCname}&";
+  $url .= "&CNM={$searchCname}";
 }
 if (isset($_POST['searchMaker'])) {
   $searchMaker = mb_convert_encoding($_POST['searchMaker'], "Shift_JIS");
@@ -53,7 +53,7 @@ if ($xml === false) {
 }
 
 $stockData = $xml->stock_info;
-$totalItems = isset($xml->total_hit_count) ? strval($xml->total_hit_count) : 0;
+$totalItems = isset($xml->total_hit_count) ? strval($xml->total_hit_count) : '';
 $dataForPage = [];
 if ($stockData) {
   foreach ($stockData as $row) {
@@ -104,18 +104,13 @@ if ($stockData) {
   }
 }
 
-$qs = $_FORM;
-unset($qs['page']);
-$qs2 = $qs; //表示順
-$qs = !empty($qs) ? http_build_query($qs) : '';
-unset($qs2['order']);
-$qs2 = !empty($qs2) ? http_build_query($qs2) : '';
-
+// ページネーションの処理
+$pl = !empty($_POST['paginationLink']);
 $p = new pagination;
 $p->items($totalItems);
 $p->limit($itemsPerPage);
-if (!empty($qs)) {
-  $p->target("index.php?" . $qs);
+if (!empty($pl)) {
+  $p->target('index.php?' . $pl);
 }
 $p->currentPage($page);
 $pagination = $p->show();

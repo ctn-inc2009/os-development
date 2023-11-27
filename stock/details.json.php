@@ -35,6 +35,7 @@ if ($xml === false) {
 }
 
 $detailsData = $xml->stock_info;
+$error = $xml->error->message ? true : false;
 
 if ($detailsData) {
   foreach ($detailsData as $row) {
@@ -338,5 +339,6 @@ $response = [
   'maker' => $maker,
   'cname' => $cname,
   'data' => $details,
+  'error' => $error,
 ];
 echo json_encode($response);
