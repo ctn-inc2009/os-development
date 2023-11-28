@@ -4,7 +4,7 @@ require "../inc/option.inc";
 require incPATH . "/library.inc";
 require incPATH . "/define.inc";
 
-$sno = !empty($_GET['sno']) ? $_GET['sno'] : 0;
+$sno = isset($_GET['sno']) ? $_GET['sno'] : '';
 
 $metaDescription = "";
 
@@ -124,6 +124,7 @@ require incPATH . "/layout.inc";
           sno: sno
         }
       }).done(function(res) {
+        console.log(res);
           if (res && !res.error) {
             let car_name = res.cname;
             let maker = res.maker;
@@ -172,7 +173,7 @@ require incPATH . "/layout.inc";
 
             anothersShow(car_name, maker);
           } else {
-            window.location.href = 'index.php';
+            // window.location.href = 'index.php';
           }
       }).fail(function(jqXHR, textStatus, errorThrown) {
         console.error("リクエストが失敗しました：" + textStatus, errorThrown);

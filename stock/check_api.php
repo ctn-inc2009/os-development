@@ -25,7 +25,7 @@ if (isset($_POST['searchMaker'])) {
 if ((isset($_POST['searchMinPrice']) && isset($_POST['searchMaxPrice']))) {
   $searchMinPrice = $_POST['searchMinPrice']; 
   $searchMaxPrice = $_POST['searchMaxPrice']; 
-  $url .= "SP={$searchMinPrice}&EP={$searchMaxPrice}";
+  $url .= "&SP={$searchMinPrice}&EP={$searchMaxPrice}";
 }
 
 // ソートの処理

@@ -12,7 +12,7 @@ if (empty($_SESSION['sp'])) {
   }
 }
 
-$sno = !empty($_FORM['sno']) ? $_FORM['sno'] : 0;
+$sno = isset($_POST['sno']) ? $_POST['sno'] : '';
 
 $url = "https://auto.jocar.jp/HPWebservice/GetCarDetail.aspx?KEY_ID={$key_id}&HNCD={$hncd}&GM={$sno}";
 
@@ -80,8 +80,11 @@ if ($detailsData) {
     //走行距離
     $distance = '-';
     if (!empty($row->distance)) {
-      $tmp = str_replace([',', 'km'], '', $row->distance) / 10000;
-      $distance = '<em>' . $tmp . '万</em>km';
+      $tmp = str_replace([',', 'km'], '', $row->distance) ;
+      if (is_numeric($tmp)) {
+        $tmp = $tmp / 10000;
+        $distance = '<em>' . $tmp . '万</em>km';
+      }
     }
     //ミッション名
     $mission = isset($row->mission) ? $row->mission : '';

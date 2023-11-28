@@ -33,9 +33,10 @@ if (!empty($_order[$_FORM['order']])) {
 
 // 初期化
 $itemsPerPage = 24;
+$sortPrice = 3;
 $page = isset($_GET['page']) ? $_GET['page'] : 1;
-$sort = isset($_GET['order']) ? $_GET['order'] : 1;
-$cname = isset($_GET['cname']) ? $_GET['cname'] : '';
+$sort = isset($_GET['order']) ? $sortPrice . '_'. $_GET['order'] : "3_0";
+$cname = isset($_GET['cname']) ? str_replace(' ','', $_GET['cname']) : '';
 $price = isset($_GET['price']) ? $_GET['price'] : '';
 $priceRange = isset($_GET['price']) ? $_GET['price'] : '';
 // 価格帯パラメータ取得の処理
@@ -65,24 +66,6 @@ if (!empty($priceRange)) {
   <?php echo $css; ?>
   <?php echo $js; ?>
   <?php echo $searchjs; ?>
-  <!-- <style>
-    #zaikoList .image {
-      position: relative;
-      display: block;
-      overflow: hidden;
-      padding-top: 70.25%;
-      position: relative;
-      width: 100%;
-    }
-
-    .clearfix img {
-      height: 100%;
-      width: 100%;
-      left: 0;
-      top: 0;
-      position: absolute;
-    }
-  </style> -->
 </head>
 
 <body id="stock">
@@ -114,11 +97,20 @@ if (!empty($priceRange)) {
           <div class="pagination_wrap"></div>
           <div class="clearfix">
             <p class="fleft">検索結果：<em class="big red"></em>件</p>
+            <?php
+            $qs = $_FORM;
+            unset($qs['page']);
+            $qs2 = $qs; //表示順
+            $qs = !empty($qs) ? http_build_query($qs) : '';
+            unset($qs2['order']);
+            $qs2 = !empty($qs2) ? http_build_query($qs2) : '';
+            ?>
             <p class="order">
               [ 価格： <a href="<?php echo $_SERVER['PHP_SELF'] . "?" . $qs2 . "&order=1"; ?>" <?php echo $current[1] ?>>高</a>
               ｜ <a href="<?php echo $_SERVER['PHP_SELF'] . "?" . $qs2 . "&order=2"; ?>" <?php echo $current[2] ?>>安</a> ]</p>
           </div>
           <ul id="zaikoList" class="flex"></ul>
+          <div class="pagination_wrap"></div>
         </section>
 
       </article><!-- /.inner -->
@@ -129,11 +121,12 @@ if (!empty($priceRange)) {
   <script>
     $(function() {
       let page = <?php echo $page; ?>;
-      let itemsPerPage = '<?php echo $itemsPerPage; ?>';
-      let sort = <?php echo $sort; ?>;
+      let itemsPerPage = <?php echo $itemsPerPage; ?>;
+      let sort = '<?php echo $sort; ?>';
       let searchCname = '<?php echo $cname; ?>';
       let searchMaxPrice = '<?php echo $maxPrice; ?>';
       let searchMinPrice = '<?php echo $minPrice; ?>';
+      let paginationLink = '<?php echo $ps; ?>'
       $.ajax({
         type: "POST",
         dataType: "json",
@@ -142,18 +135,20 @@ if (!empty($priceRange)) {
           page,
           itemsPerPage,
           sort,
-          searchCname: encodeURIComponent(searchCname),
+          searchCname: searchCname,
           searchMaxPrice,
           searchMinPrice,
+          paginationLink,
         },
       }).done(function(res) {
         let htmls = '';
-        let telNo = '072-289-8070'
-        if (res.data.length > 0) {
+        let telNo = '072-289-8070';
+        if (res) {
           $(".fleft em").text(res.totalItems);
-          $(".pagination_wrap").html(res.pagination);
-          res.data.forEach(item => {
-            htmls += `<li>
+          if (res.data.length > 0) {
+            $(".pagination_wrap").html(res.pagination);
+            res.data.forEach(item => {
+              htmls += `<li>
                     <h3 class="name">${item.cname} <span>${item.grade}</span></h3>
                     <div class="clearfix">
                       ${item.status === '売却' ? `
@@ -187,10 +182,11 @@ if (!empty($priceRange)) {
                       </div>
                     </div>
                 </li>`;
-          });
-          $("#zaikoList").html(htmls);
-        } else {
-          $("#zaikoList").html('<p class="center">お探しの条件の車の登録がありませんでした。</p>');
+            });
+            $("#zaikoList").html(htmls);
+          } else {
+            $("#zaikoList").after('<p class="center">お探しの条件の車の登録がありませんでした。</p>');
+          }
         }
       }).fail(function(jqXHR, textStatus, errorThrown) {
         console.error("リクエストが失敗しました：" + textStatus, errorThrown);
