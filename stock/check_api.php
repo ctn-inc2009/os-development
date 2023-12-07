@@ -3,10 +3,10 @@
 require '../inc/option.inc';
 require incPATH . '/library.inc';
 require incPATH . '/define.inc';
-require incPATH . "/pagination.class.php";
+require incPATH . '/pagination.class.php';
 
 
-$url = "https://auto.jocar.jp/HPWebservice/GetCarList.aspx?KEY_ID={$key_id}&HNCD={$hncd}";
+$url = "https://auto.jocar.jp/HPWebservice/GetCarList.aspx?KEY_ID={$key_id}&HNCD={$hncd}&HPCD={$hpcd}&SP=1";
 
 $itemsPerPage = isset($_POST['itemsPerPage']) ? $_POST['itemsPerPage'] : 24;
 $page = isset($_POST['page']) ? $_POST['page'] : 1;
@@ -54,6 +54,8 @@ if ($xml === false) {
 
 $stockData = $xml->stock_info;
 $totalItems = isset($xml->total_hit_count) ? strval($xml->total_hit_count) : '';
+$error = isset($xml->error->message) ? strval($xml->error->message) : '';
+
 $dataForPage = [];
 if ($stockData) {
   foreach ($stockData as $row) {
@@ -96,16 +98,16 @@ if ($stockData) {
               $items['price'] =  strval(number_format($price / 10000 , 4, '.', ','));
             }
         } else {
-            $items['price'] = strval($price_str);
+            $items['price'] = $price_str;
         }
       }
     }
-    $dataForPage[] = $items;
+      $dataForPage[] = $items;
   }
 }
 
 // ページネーションの処理
-$pl = !empty($_POST['paginationLink']);
+$pl = isset($_POST['paginationLink']) ? $_POST['paginationLink'] : '';
 $p = new pagination;
 $p->items($totalItems);
 $p->limit($itemsPerPage);
@@ -121,5 +123,6 @@ $response = [
   'data' => $dataForPage,
   'totalItems' => $totalItems,
   'pagination' => $pagination,
+  'error' => $error,
 ];
 echo json_encode($response);

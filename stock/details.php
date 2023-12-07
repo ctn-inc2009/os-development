@@ -172,7 +172,9 @@ require incPATH . "/layout.inc";
 
             anothersShow(car_name, maker);
           } else {
-            window.location.href = 'index.php';
+            let currentUrl = window.location.href;
+            let previousURL = currentUrl.substring(0, currentUrl.lastIndexOf('/'));
+            window.location.href = previousURL;
           }
       }).fail(function(jqXHR, textStatus, errorThrown) {
         console.error("リクエストが失敗しました：" + textStatus, errorThrown);

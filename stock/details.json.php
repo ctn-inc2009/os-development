@@ -35,7 +35,7 @@ if ($xml === false) {
 }
 
 $detailsData = $xml->stock_info;
-$error = $xml->error->message ? true : false;
+$error = isset($xml->error->message) ? strval($xml->error->message) : '';
 
 if ($detailsData) {
   foreach ($detailsData as $row) {

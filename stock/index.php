@@ -35,8 +35,8 @@ if (!empty($_order[$_FORM['order']])) {
 $itemsPerPage = 24;
 $sortPrice = 3;
 $page = isset($_GET['page']) ? $_GET['page'] : 1;
-$sort = isset($_GET['order']) ? $sortPrice . '_'. $_GET['order'] : "3_0";
-$cname = isset($_GET['cname']) ? str_replace(' ','', $_GET['cname']) : '';
+$sort = isset($_GET['order']) ? $sortPrice . '_' . $_GET['order'] : "3_0";
+$cname = isset($_GET['cname']) ? str_replace(' ', '', $_GET['cname']) : '';
 $price = isset($_GET['price']) ? $_GET['price'] : '';
 $priceRange = isset($_GET['price']) ? $_GET['price'] : '';
 // 価格帯パラメータ取得の処理
@@ -104,6 +104,7 @@ if (!empty($priceRange)) {
             $qs = !empty($qs) ? http_build_query($qs) : '';
             unset($qs2['order']);
             $qs2 = !empty($qs2) ? http_build_query($qs2) : '';
+
             ?>
             <p class="order">
               [ 価格： <a href="<?php echo $_SERVER['PHP_SELF'] . "?" . $qs2 . "&order=1"; ?>" <?php echo $current[1] ?>>高</a>
@@ -126,7 +127,7 @@ if (!empty($priceRange)) {
       let searchCname = '<?php echo $cname; ?>';
       let searchMaxPrice = '<?php echo $maxPrice; ?>';
       let searchMinPrice = '<?php echo $minPrice; ?>';
-      let paginationLink = '<?php echo $ps; ?>'
+      let paginationLink = '<?php echo $qs; ?>'
       $.ajax({
         type: "POST",
         dataType: "json",
@@ -135,7 +136,7 @@ if (!empty($priceRange)) {
           page,
           itemsPerPage,
           sort,
-          searchCname: searchCname,
+          searchCname: encodeURIComponent(searchCname),
           searchMaxPrice,
           searchMinPrice,
           paginationLink,
@@ -143,7 +144,7 @@ if (!empty($priceRange)) {
       }).done(function(res) {
         let htmls = '';
         let telNo = '072-289-8070';
-        if (res) {
+        if (res && !res.error) {
           $(".fleft em").text(res.totalItems);
           if (res.data.length > 0) {
             $(".pagination_wrap").html(res.pagination);
@@ -187,6 +188,9 @@ if (!empty($priceRange)) {
           } else {
             $("#zaikoList").after('<p class="center">お探しの条件の車の登録がありませんでした。</p>');
           }
+        } else {
+          console.error(res.error);
+          alert(res.error);
         }
       }).fail(function(jqXHR, textStatus, errorThrown) {
         console.error("リクエストが失敗しました：" + textStatus, errorThrown);

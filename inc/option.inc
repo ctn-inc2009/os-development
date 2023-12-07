@@ -39,6 +39,7 @@ $checked = ' checked="checked"';
 
 $key_id = 'FzHCR2Tuhh259';
 $hncd = '006355';
+$hpcd = 'a'; // 掲載HPコード: lexusは「a」を設定する
 
 $_state = array( 0 => '表示', 88 => '非表示' );
 
