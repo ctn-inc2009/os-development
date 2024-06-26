@@ -6,7 +6,7 @@ require incPATH . '/define.inc';
 require incPATH . '/pagination.class.php';
 
 
-$url = "https://auto.jocar.jp/HPWebservice/GetCarList.aspx?KEY_ID={$key_id}&HNCD={$hncd}&HPCD={$hpcd}&SP=1";
+$url = "https://auto.jocar.jp/HPWebservice/GetCarList.aspx?KEY_ID={$key_id}&HNCD={$hncd}&HPCD={$hpcd}";
 
 $itemsPerPage = isset($_POST['itemsPerPage']) ? $_POST['itemsPerPage'] : 24;
 $page = isset($_POST['page']) ? $_POST['page'] : 1;
@@ -22,10 +22,14 @@ if (isset($_POST['searchMaker'])) {
   $searchMaker = mb_convert_encoding($_POST['searchMaker'], "Shift_JIS");
   $url .= "&MK={$searchMaker}";
 }
+$lowestPrice = 0.0001;
 if ((isset($_POST['searchMinPrice']) && isset($_POST['searchMaxPrice']))) {
   $searchMinPrice = $_POST['searchMinPrice']; 
-  $searchMaxPrice = $_POST['searchMaxPrice']; 
+  $searchMaxPrice = $_POST['searchMaxPrice'];
+  if ($searchMinPrice == 0) $searchMinPrice = $lowestPrice;
   $url .= "&SP={$searchMinPrice}&EP={$searchMaxPrice}";
+} else {
+  $url .= "&SP={$lowestPrice}";
 }
 
 // ソートの処理
@@ -84,23 +88,28 @@ if ($stockData) {
 
     $items['link']  = urlencode('管理番号' . $items['sno'] . '　' . $items['maker'] . '　' . $items['cname'] . '　' . $items['grade'] . '　' . $items['color']);
 
-    if (strpos($row->status, '売却') !== false) {
-      $items['price'] = 'SOLD OUT';
+    // Thêm thông tin về cost vào mảng $items
+    $items['cost'] = 20;
+
+    // Cập nhật giá thành total price (price + cost)
+    if (strpos($row['status'], '売却') !== false) {
+        $items['price'] = 'SOLD OUT';
     } else {
-      if (!empty($items['price'])) {
-        $price_str = str_replace(',', '', $items['price']);
-        if (is_numeric($price_str)) {
-            $price = intval($price_str);
-            $count = strlen($price_str);
-            if ($count < 8 ) {
-              $items['price'] = strval($price / 10000);
-            } else {
-              $items['price'] =  strval(number_format($price / 10000 , 4, '.', ','));
+        if (!empty($items['price'])) {
+            $price_str = str_replace(',', '', $items['price']);
+            if (is_numeric($price_str)) {
+                $price = intval($price_str);
+                $count = strlen($price_str);
+                if ($count < 8) {
+                    $items['price'] = rtrim(strval($price / 10000), '0');
+                } else {
+                    $items['price'] = rtrim(strval(number_format($price / 10000, 4, '.', ',')), '0');
+                }
+
+                $totalPrice = floatval($items['price']) + $items['cost'];
+                $items['totalPrice'] = rtrim(number_format($totalPrice, 4, '.', ','), '0');
             }
-        } else {
-            $items['price'] = $price_str;
         }
-      }
     }
       $dataForPage[] = $items;
   }
