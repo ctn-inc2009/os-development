@@ -88,10 +88,8 @@ if ($stockData) {
 
     $items['link']  = urlencode('管理番号' . $items['sno'] . '　' . $items['maker'] . '　' . $items['cname'] . '　' . $items['grade'] . '　' . $items['color']);
 
-    // Thêm thông tin về cost vào mảng $items
     $items['cost'] = 20;
 
-    // Cập nhật giá thành total price (price + cost)
     if (strpos($row['status'], '売却') !== false) {
         $items['price'] = 'SOLD OUT';
     } else {
