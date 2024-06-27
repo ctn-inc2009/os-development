@@ -70,7 +70,7 @@ if ($detailsData) {
     }
     $year_style = isset($row->year) ? add_gengo_jcm($row->year, 'en') : '';
     $inspection = isset($row->inspection) ? $row->inspection : '';
-    $grade = isset($row->grade) ? $row->grade :  '';
+    $grade = isset($row->grade) ? mb_convert_kana($row->grade) :  '';
     //色（ホワイトパールクリスタルシャイン）など
     $color = isset($row->exterior_color) ? $row->exterior_color : '';
     //在庫状況 使わない
@@ -351,6 +351,7 @@ header('Content-Type: application/json');
 $response = [
   'maker' => $maker,
   'cname' => $cname,
+  'grade' => $grade,
   'data' => $details,
   'error' => $error,
 ];
