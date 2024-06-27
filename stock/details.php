@@ -4,11 +4,31 @@ require "../inc/option.inc";
 require incPATH . "/library.inc";
 require incPATH . "/define.inc";
 
+$url = "https://auto.jocar.jp/HPWebservice/GetCarList.aspx?KEY_ID={$key_id}&HNCD={$hncd}&HPCD={$hpcd}";
+
 $sno = isset($_GET['sno']) ? $_GET['sno'] : '';
+
+$contents = file_get_contents($url);
+
+$stockData = $xml->stock_info;
+$totalItems = isset($xml->total_hit_count) ? strval($xml->total_hit_count) : '';
+$error = isset($xml->error->message) ? strval($xml->error->message) : '';
+
+$dataForPage = [];
+if ($stockData) {
+  foreach ($stockData as $row) {
+    $items = [
+        'cname' => isset($row->car_name) ? strval(mb_convert_kana($row->car_name,'KV')) : '',
+    ];
+
+    $cname = str_replace(',', '', $items['cname']);
+  }
+}
+
 
 $metaDescription = "";
 
-$conTitle = '在庫車情報｜西日本最大級のレクサス専門店株式会社OS';
+$conTitle = '在庫車情報｜西日本最大級のレクサス(LEXUS)専門店【公式】株式会社OS';
 $pageTitle = "{$cname}｜{$conTitle}｜{$siteTitle}";
 $metaDescription = "西日本で最大級のレクサス専門店株式会社OSの最新在庫車情報からお気に入りの一台を見つけてください！レクサスの厳選した中古車を多数在庫しております。西日本でレクサス中古車を買うなら地域最大級株式会社OSのにお越しください。";
 
@@ -116,6 +136,7 @@ require incPATH . "/layout.inc";
   <script type="text/javascript">
     $(function() {
       let sno = "<?= $sno; ?>";
+      let car_name = '';
       $.ajax({
         type: "POST",
         dataType: "json",
@@ -125,7 +146,8 @@ require incPATH . "/layout.inc";
         }
       }).done(function(res) {
           if (res && !res.error) {
-            let car_name = res.cname;
+            // let car_name = res.cname;
+            car_name = res.cname;
             let maker = res.maker;
             $('#pan.inner li:last').text(car_name);
             $('#data').html(res.data);
@@ -171,6 +193,8 @@ require incPATH . "/layout.inc";
             });
 
             anothersShow(car_name, maker);
+
+            updatePageTitle();
           } else {
             let currentUrl = window.location.href;
             let previousURL = currentUrl.substring(0, currentUrl.lastIndexOf('/'));
@@ -180,6 +204,15 @@ require incPATH . "/layout.inc";
         console.error("リクエストが失敗しました：" + textStatus, errorThrown);
         alert("リクエストが失敗しました。");
       });
+
+      function updatePageTitle() {
+        let conTitle = '在庫車情報｜西日本最大級のレクサス(LEXUS)専門店【公式】株式会社OS';
+        let siteTitle = 'Your Site Title'; // Thay thế bằng tiêu đề thực tế của trang web của bạn
+        let pageTitle = `${car_name}｜${conTitle}｜${siteTitle}`;
+        
+        // Gán giá trị mới cho thẻ <title>
+        $('title').text(pageTitle);
+      }
 
       function anothersShow(cname, maker) {
         let searchCname = cname;
@@ -196,7 +229,7 @@ require incPATH . "/layout.inc";
           let htmls = '';
           if (res.data.length > 0) {
             $(".fleft em").text(res.totalItems);
-            let anothers = res.data.filter(item => sno !== item.sno);
+            let anothers = res.data.filter(item => sno !== item.sno && cname ===  item.cname && maker === item.maker);
             if (anothers.length > 0) {
               anothers.sort(() => Math.random() - 0.5);
               let randomFour = anothers.slice(0, 4);
@@ -209,7 +242,7 @@ require incPATH . "/layout.inc";
                           <tr><th>年式</th><td>${item.year}</td></tr>
                           <tr><th>走行距離</th><td>${item.distance}</td></tr>
                           <tr><th>検査期限</th><td>${item.inspection}</td></tr>
-                          <tr><td colspan="2" class="price">価格:<span>${item.price}</span></td></tr>
+                          <tr><td colspan="2" class="price">価格:<span>${item.totalPrice}</span></td></tr>
                       </table>
                       <p class="detailBtn arrow">詳細はこちら</p></a>
                   </li>`;

@@ -39,8 +39,12 @@ $error = isset($xml->error->message) ? strval($xml->error->message) : '';
 
 if ($detailsData) {
   foreach ($detailsData as $row) {
-    $maker = isset($row->maker) ? $row->maker : '';
+    $maker = isset($row->maker) ? strval($row->maker) : '';
     $cname = isset($row->car_name) ? mb_convert_kana($row->car_name, 'KV') : '';
+
+     // Khai báo biến cho cost và totalPrice
+    $cost = 20;
+    $totalPrice = 0;
     $price = isset($row->price) ? $row->price : '';
     //変換
     if (strpos($row->status, '売却') !== false) {
@@ -56,6 +60,8 @@ if ($detailsData) {
           } else {
             $price_val = number_format($price / 10000, 4, '.', ',');
           }
+          // Tính giá tổng cộng và lưu vào biến $totalPrice
+          $totalPrice = $price_val + $cost;
         } else {
           $price_val = $price_str;
         }
@@ -297,7 +303,11 @@ $details = <<< EOD
     <div class="carBox">
       <h3 class="cname">{$cname}</h3>
       <p class="grade">{$grade}</p>
-      <p class="price">{$price}</p>
+      <ul class="price-custom-new-detal flex">
+        <li class="total"><span class="label">支払総額<span class="tax">(税込)</span></span><span class="price"><em>{$totalPrice}</em><span class="manen">万円</span></span></li>
+        <li class="base def"><span class="label">車両本体<br><span class="tax">(税込)</span></span><span class="price-cus-h-h"><em>{$price_val}</em><span class="manen">万円</span></span></li>
+        <li class="cost def"><span class="label">諸費用<br><span class="tax">(税込)</span></span><span class="price-cus-h-h"><em>{$cost}</em><span class="manen">万円</span></span></li>
+      </ul>
 
       <dl class="cdata flex">
         <div><dt>年式</dt><dd><em>{$year_style}</em></dd></div>
